@@ -7394,7 +7394,7 @@ sub check_options () {
         'statedir'                  => "@statedir@",
         'accessmethod'              => undef,
         'htmltabledir'              => "@sharedir@/tables",
-        'htmltableurl'              => "@htmlurl@/tables",
+        'htmltableurl'              => "iframe?url=@htmlurl@/tables",
         'htmltablelinktarget'       => "_self",
         'alias'                     => 0,
         'alias-matching'            => 0,
