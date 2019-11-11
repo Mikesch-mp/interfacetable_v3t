@@ -6293,7 +6293,7 @@ sub Perfdataout {
                                     $warning_pktdiscard = ($ghOptions{'warning-pktdiscard'} >= 0) ? $ghOptions{'warning-pktdiscard'} : '';
                                     $critical_pktdiscard = ($ghOptions{'critical-pktdiscard'} >= 0) ? $ghOptions{'critical-pktdiscard'} : '';
                                 }
-                                $perfdata .= "'${servicename} PpsInErr='". $grefhCurrent->{MD}->{IfStats}->{$Name}->{PktsInErr}*1 .";$warning_pkterr;$critical_pkterr;0; "
+                                $perfdata .= "'${servicename} PpsInErr'=". $grefhCurrent->{MD}->{IfStats}->{$Name}->{PktsInErr}*1 .";$warning_pkterr;$critical_pkterr;0; "
                                     if (defined $grefhCurrent->{MD}->{IfStats}->{$Name}->{PktsInErr});
                                 $perfdata .= "'${servicename} PpsOutErr'=". $grefhCurrent->{MD}->{IfStats}->{$Name}->{PktsOutErr}*1 .";$warning_pkterr;$critical_pkterr;0; "
                                     if (defined $grefhCurrent->{MD}->{IfStats}->{$Name}->{PktsOutErr});
