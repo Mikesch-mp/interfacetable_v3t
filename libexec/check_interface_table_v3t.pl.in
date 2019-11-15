@@ -7554,7 +7554,7 @@ sub check_options () {
         'statedir'                  => "@statedir@",
         'accessmethod'              => undef,
         'htmltabledir'              => "@sharedir@/tables",
-        'htmltableurl'              => "iframe?url=@htmlurl@/tables",
+        'htmltableurl'              => "/icingaweb2/iframe?url=@htmlurl@/tables",
         'htmltablelinktarget'       => "_self",
         'alias'                     => 0,
         'alias-matching'            => 0,
