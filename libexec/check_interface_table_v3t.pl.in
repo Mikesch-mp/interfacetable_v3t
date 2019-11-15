@@ -416,7 +416,7 @@ my %oid_brocade_swOperStatus      = ( name => "swOperStatus",         mib => "SW
 my %oid_brocade_swFCPortOpStatus   = ( name => "swFCPortOpStatus",     mib => "SW-MIB", oid => "1.3.6.1.4.1.1588.2.1.1.1.6.2.1.4", convertToReadable => {0=> 'unknown', 1=>'online', 2=>'offline', 3=>'testing', 4=>'faulty'} ); # operational port status
     # DESCRIPTION    "This object identifies the operational status of the port. The online(1) state indicates that user frames
     #    can be passed. The unknown(0) state indicates that likely the port module is physically absent (see swFCPortPhyState)."
-my %oid_brocade_swFCPortPhyState   = ( name => "swFCPortPhyState",     mib => "SW-MIB", oid => "1.3.6.1.4.1.1588.2.1.1.1.6.2.1.3", convertToReadable => {1=>'noCard', 2=>'noTransceiver', 3=>'LaserFault', 4=>'noLight', 5=>'noSync', 6=>'inSync', 7=>'portFault', 8=>'diagFault', 9=>'lockRef'} ); # physical port status
+my %oid_brocade_swFCPortPhyState   = ( name => "swFCPortPhyState",     mib => "SW-MIB", oid => "1.3.6.1.4.1.1588.2.1.1.1.6.2.1.3", convertToReadable => {1=>'noCard', 2=>'noTransceiver', 3=>'LaserFault', 4=>'noLight', 5=>'noSync', 6=>'inSync', 7=>'portFault', 8=>'diagFault', 9=>'lockRef', 10=>'validating', 11=>'invalidModule', 14=>'noSigDet', 255=>'unknown'} ); # physical port status
     # DESCRIPTION    "This object identifies the physical state of the port:
     #       noCard(1)           no card present in this switch slot;
     #       noTransceiver(2)    no Transceiver module in this port. noGbic(2) was used previously. Transceiver is the generic name for GBIC, SFP etc.;
@@ -749,6 +749,8 @@ my $grefAoHInterfaceTableHeader = [                      # Header for the cols o
         Tooltip => "The current state of the interface.<br> up - has link and is initialized<br> down - has no link and is initialized<br> disabled - has been forced down<br> uninitialized - has not been initialized<br> loopback - in loopback mode<br> unpopulated - interface not physically populated" },
     { Title => 'Admin status',         Dataname => 'ifAdminStatus',   Datatype => 'property', Tablesort => 'sortable-text',               Nodetype => 'standard,cisco,hp,netscreen,netapp,bluecoat,brocade,brocade-nos,nortel,hpux,netapp-cdot,datadomain', Enabled => 1,
         Tooltip => '<TABLE><TR><TH>Value</TH><TH>Meaning</TH></TR><TR><TD>up</TD><TD>ready to pass packets</TD></TR><TR><TD>down</TD><TD></TD></TR><TR><TD>testing</TD><TD>in some test mode</TD></TR></TABLE>' },
+    { Title => 'Port status',         Dataname => 'fcPortStatus',   Datatype => 'property', Tablesort => 'sortable-text',               Nodetype => 'brocade', Enabled => 1,
+        Tooltip => '<TABLE><TR><TH>Value</TH><TH>Meaning</TH></TR><TR><TD>noCard </TD><TD>No card is present in this switch slot.</TD></TR><TR><TD>noTransceiver</TD><TD>No Transceiver module in this port.</TD></TR><TR><TD>laserFault</TD><TD>The module is signaling a laser fault (defective GBIC).</TD></TR><TR><TD>noLight</TD><TD>The module is not receiving light.</TD></TR><TR><TD>noSync</TD><TD>The module is receiving light but is out of sync.</TD></TR><TR><TD>inSync</TD><TD>The module is receiving light and is in sync.</TD></TR><TR><TD>portFault</TD><TD>The port is marked faulty (defective GBIC, cable, or device).</TD></TR><TR><TD>diagFault</TD><TD>The port failed diagnostics (defective G_Port or FL_Port card or motherboard).</TD></TR><TR><TD>lockRef</TD><TD>The port is locking to the reference signal.</TD></TR><TR><TD>validating</TD><TD>The module is being validated.</TD></TR><TR><TD>invalidModule</TD><TD>The module is invalid.</TD></TR><TR><TD>noSigDet</TD><TD>No Signal is detected in the port.</TD></TR><TR><TD>unknown</TD><TD>The module is unknown.</TD></TR></TABLE>' },
     { Title => 'Oper status',          Dataname => 'ifOperStatus',    Datatype => 'property', Tablesort => 'sortable-text',               Nodetype => 'standard,cisco,hp,netscreen,netapp,bluecoat,brocade,brocade-nos,nortel,hpux,netapp-cdot,datadomain', Enabled => 1,
         Tooltip => '<TABLE><TR><TH>Value</TH><TH>Meaning</TH></TR><TR><TD>up</TD><TD>ready to pass packets</TD></TR><TR><TD>down</TD><TD></TD></TR><TR><TD>testing</TD><TD>in some test mode</TD></TR><TR><TD>unknown</TD><TD>status can not be determined for some reason</TD></TR><TR><TD>dormant</TD><TD></TD></TR><TR><TD>notPresent</TD><TD>some component are missing</TD></TR><TR><TD>lowerLayerDown</TD><TD>down due to state of lower-layer interface(s)</TD></TR></TABLE>' },
     { Title => 'Type',                 Dataname => 'ifType',          Datatype => 'property', Tablesort => 'sortable-text',               Nodetype => 'ALL',                                                        Enabled => $ghOptions{'type'},
@@ -1096,9 +1098,10 @@ elsif ($ghOptions{'nodetype'} eq "brocade") {
     Get_AdminStatus (\%oid_ifAdminStatus); # Gather interface administration status
     Get_OperStatus (\%oid_ifOperStatus); # Gather interface operational status
     Get_Speed (\%oid_ifSpeed, \%oid_ifHighSpeed); # Gather interface speed
-    Get_Alias_Brocade () if ($ghOptions{'alias'}); # Gather interface alias
+    Get_Alias_Brocade (); # Gather interface alias
     Get_Duplex (\%oid_ifDuplexStatus) if ($ghOptions{'duplex'}); # Gather interface duplex state
     Get_IpInfo (\%oid_ipAdEntIfIndex, \%oid_ipAdEntNetMask) if ($ghOptions{'ipinfo'}); # Gather interface ip addresses and masks
+    Get_PortStatus (\%oid_brocade_swFCPortPhyState);
     if ($ghSNMPOptions{'64bits'}) {  # Gather interface traffics (in/out and packet errors/discards)
         Get_Traffic ('64', \%oid_ifHCInOctets, \%oid_ifHCOutOctets);
     } else {
@@ -1123,9 +1126,10 @@ elsif ($ghOptions{'nodetype'} eq "brocade-nos") {
     Get_AdminStatus (\%oid_ifAdminStatus); # Gather interface administration status
     Get_OperStatus (\%oid_ifOperStatus); # Gather interface operational status
     Get_Speed (\%oid_ifSpeed, \%oid_ifHighSpeed); # Gather interface speed
-    Get_Alias_Brocade () if ($ghOptions{'alias'}); # Gather interface alias
+    Get_Alias_Brocade (); # Gather interface alias
     Get_Duplex (\%oid_ifDuplexStatus) if ($ghOptions{'duplex'}); # Gather interface duplex state
     Get_IpInfo (\%oid_ipAdEntIfIndex, \%oid_ipAdEntNetMask) if ($ghOptions{'ipinfo'}); # Gather interface ip addresses and masks
+    Get_PortStatus (\%oid_brocade_swFCPortPhyState);
     if ($ghSNMPOptions{'64bits'}) {  # Gather interface traffics (in/out and packet errors/discards)
         Get_Traffic ('64', \%oid_ifHCInOctets, \%oid_ifHCOutOctets);
     } else {
@@ -2170,6 +2174,160 @@ sub Get_OperStatus {
     return 0;
 }
 
+# ------------------------------------------------------------------------
+# get fcPortStatus
+# ------------------------------------------------------------------------
+sub Get_PortStatus {
+
+    my $refhOID = shift;
+    my $refhSNMPResult;       # Lines returned from snmpwalk storing ifAdminStatus
+
+    # get all interface adminstatus - no caching !
+    eval {
+        my %hOptions = ( %ghSNMPOptions, (oids => ["$refhOID->{'oid'}"], cachetimer => 0, outputhashkeyidx => 1, checkempty => 1));
+        $refhSNMPResult = GetTableDataWithSnmp (\%hOptions);
+    };
+    ExitPlugin($ERRORS{"UNKNOWN"}, add_oid_details($@->message(), [ $refhOID ])) if ($@);
+
+    # loop through all found interfaces
+    for my $ifName (keys %{$grefhCurrent->{If}}) {
+        # Extract the index out of the MetaData
+        if (defined $grefhCurrent->{MD}->{Map}->{Brocade}->{NameToFCPortIndex}->{"$ifName"}) {
+            my $Index = $grefhCurrent->{MD}->{Map}->{Brocade}->{NameToFCPortIndex}->{"$ifName"};
+
+            if (defined $refhSNMPResult->{$Index}) {
+                my $PortStatusNow = $refhSNMPResult->{$Index};
+                # Store fcPortStatus converted from a digit to "up" or "down"
+                #$grefhCurrent->{If}->{"$ifName"}->{fcPortStatus} = (defined $refhOID->{'convertToReadable'}->{"$PortStatusNow"})
+                #  ? $refhOID->{'convertToReadable'}->{"$PortStatusNow"} : $PortStatusNow;
+                #$grefhCurrent->{If}->{"$ifName"}->{fcPortStatusNumber} = "$PortStatusNow";
+                #logger(2, "Index=$Index ($ifName): PortStatus=".$grefhCurrent->{If}->{"$ifName"}->{fcPortStatus});
+                $grefhCurrent->{If}->{"$ifName"}->{fcPortStatusNumber} = $PortStatusNow;
+                defined $refhOID->{'convertToReadable'}->{"$PortStatusNow"} and $PortStatusNow = $refhOID->{'convertToReadable'}->{"$PortStatusNow"};
+                $grefhCurrent->{If}->{"$ifName"}->{fcPortStatus} = "$PortStatusNow";
+
+
+                # Retrieve adminstatus for special rules
+                my $AdminStatusNow = $grefhCurrent->{If}->{"$ifName"}->{ifAdminStatus};
+
+                #
+                # Store a CacheTimer (seconds) where we cache the next
+                # reads from the net - we have the following possibilities
+                #
+                # fcPortStatus:
+                #
+                # Current state                  | first state                    |  CacheTimer
+                # ----------------------------------------------------------------------------------
+                # inSync                          inSync                            $gShortCacheTimer
+                # laserFault,portFault,diagFault  laserFault,portFault,diagFault    $gLongCacheTimer
+                # other                           *                                 0
+                #
+                # One exception to that logic is the "Changed" flag. If this
+                # is set we detected a change on an interface property and do not
+                # cache !
+                #
+                my $PortStatusFile = $grefhFile->{If}->{"$ifName"}->{fcPortStatus};
+                $PortStatusFile = "" unless ($PortStatusFile);
+                # set cache timer for further reads
+                if ("$PortStatusNow" eq "inSync" and "$PortStatusFile" eq "inSync") {
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{CacheTimer} = $gShortCacheTimer;
+                } elsif (("$PortStatusNow" eq "laserFault" and "$PortStatusFile" eq "laserFault") || ("$PortStatusNow" eq "portFault" and "$PortStatusFile" eq "portFault") || ("$PortStatusNow" eq "diagFault" and "$PortStatusFile" eq "diagFault")) {
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{CacheTimer} = $gLongCacheTimer;
+                } else {
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{CacheTimer} = 0;
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText} =
+                        "Old = \"$PortStatusFile\", Current = \"$PortStatusNow\" ";
+                }
+                logger(2, "  Index=$Index ($ifName): Portstatus was \"$PortStatusFile\" and is now \"$PortStatusNow\" (cachetimer=".$grefhCurrent->{MD}->{If}->{"$ifName"}->{CacheTimer}.")");
+
+                # remember change time of the interface property
+                if ($grefhFile->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime}) {
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} =
+                        $grefhFile->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime}
+                } else {
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} = time;
+                }
+
+                #
+                # Some rules with fcPortStatus
+                #
+                # Between initial fcPortStatus and current fcPortStatus
+                # current fcPortStatus | initial fcPortStatus | action
+                # ---------------------------------------------------------------------
+                # inSync               | *                    | no alarm and update fcPortStatus initial state
+                # noLight              | emptyi,noLight       | no alarm and update fcPortStatus initial state
+                #
+                # Between current fcPortStatus and current ifAdminStatus
+                # current fcPortStatus | current ifAdminStatus | action
+                # ---------------------------------------------------------------------
+                # *                    | down                     | no alarm and update fcPortStatus initial state
+                #
+
+                # track changes of the port status
+                if ("$PortStatusNow" eq "$PortStatusFile") {   # no changes to its first state
+                    # delete the changed flag and reset the time when it was changed
+                    if ($grefhFile->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText}) {
+                        delete $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText};
+                        $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} = time;
+                    }
+                }
+                # fcPortStatus has changed to inSync, no alert
+                elsif ("$PortStatusNow" eq "inSync") {
+                    # update the state in the status file
+                    $grefhFile->{If}->{"$ifName"}->{fcPortStatus} = "$PortStatusNow";
+                    # delete the changed flag and reset the time when it was changed
+                    if ($grefhFile->{MD}->{If}->{"$ifName"}->{ifiPortStatusChangeText}) {
+                        delete $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText};
+                        $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} = time;
+                    }
+                    logger(3, "  Portstatus specific rules: fcPortStatus has changed to inSync, no alert");
+                }
+                # fcPortStatus has changed from 'empty' or 'noLight', no alert
+                elsif ("$PortStatusFile" eq "" or "$PortStatusFile" eq "noLight") {
+                    # update the state in the status file
+                    $grefhFile->{If}->{"$ifName"}->{fcPortStatus} = "$PortStatusNow";
+                    # delete the changed flag and reset the time when it was changed
+                    if ($grefhFile->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText}) {
+                        delete $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText};
+                        $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} = time;
+                    }
+                    logger(3, "  Portstatus specific rules: fcPortStatus has changed from 'empty' or 'noLight', no alert");
+                }
+                # fcPortStatus has changed to 'down' and ifAdminstatus is 'down', no alert
+                elsif ("$PortStatusNow" ne "inSync" and "$AdminStatusNow" eq "down") {
+                    # update the state in the status file
+                    $grefhFile->{If}->{"$ifName"}->{fcPortStatus} = "$PortStatusNow";
+                    # delete the changed flag and reset the time when it was changed
+                    if ($grefhFile->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText}) {
+                        delete $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText};
+                        $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} = time;
+                    }
+                    logger(3, "  Portstatus specific rules: fcPortStatus has changed to 'down' and ifAdminstatus is 'down', no alert");
+                }
+                # fcPortStatus has changed, alerting
+                else {
+                    # flag if changes already tracked
+                    if (not $grefhFile->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText}) {
+                        $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeTime} = time;
+                    }
+
+                    # remember the change every run of this program, this is useful if the
+                    # fcPortStatus changes from "up" to "testing" to "down"
+                    $grefhCurrent->{MD}->{If}->{"$ifName"}->{fcPortStatusChangeText} =
+                        "Old = \"$PortStatusFile\", Current = \"$PortStatusNow\" ";
+                }
+
+
+            } else {
+                logger(2, "($ifName): PortStatus not found for the interface");
+            }
+        } else {
+          $grefhCurrent->{If}->{"$ifName"}->{fcPortStatusNumber} = '';
+          $grefhCurrent->{If}->{"$ifName"}->{fcPortStatus} = '';
+      }
+    }
+    return 0;
+}
 # ------------------------------------------------------------------------
 # walk through each interface and read ifSpeed
 # ------------------------------------------------------------------------
@@ -7044,6 +7202,8 @@ sub print_usage () {
             * 'nsIfZone'           : the security zone name an interface belongs to
             * 'nsIfVsys'           : the virtual system name an interface belongs to
             * 'nsIfMng'            : the management protocols permitted on the interface
+          Brocade specific:
+            * 'fcPortStatus'       : the physical state of the port
         Default is 'ifOperStatus' only
         Exemple: --tp='ifOperStatus,nsIfMng'
     --ep, --exclude-property (optional)
