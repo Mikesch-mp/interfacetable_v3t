@@ -5918,6 +5918,10 @@ sub GenerateInterfaceTableData {
                                 'href="' . $ghOptions{'grapherurl'} . '/index.php/graph?host=' . $ghOptions{'hostdisplay'} . '&srv=' . $servicename . '" ' .
                                 'rel="' . $ghOptions{'grapherurl'} . '/index.php/popup?host=' . $ghOptions{'hostdisplay'} . '&srv=' . $servicename . '">' .
                                 '<img src="../img/chart.png" alt="Trends" /></a>';
+                        } elsif ($ghOptions{'grapher'} eq  "grafana") {
+                            $CellContent .= '<a href="' .
+                                $ghOptions{'grapherurl'} . '&var-hostname=' . $ghOptions{'hostdisplay'} . '&var-interface=' . $servicename . '"> ' .
+                                '<img src="../img/chart.png" alt="Trends" /></a>';
                         } elsif ($ghOptions{'grapher'} eq  "nagiosgrapher") {
                             $CellContent .= '<a href="' .
                                 #$ghOptions{'grapherurl'} . '/graphs.cgi?host=' . $ghOptions{'hostdisplay'} . '&srv=' . $servicename .
@@ -6302,7 +6306,7 @@ sub WriteHtmlFile {
 # Perfdataout
 # --------------------------------------------------------------------
 # Description: write performance data
-# Grapher: pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, nagiosxi
+# Grapher: pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, nagiosxi, grafana
 # Format:
 #    * full : generated performance data include plugin related stats,
 #             interface status, interface load stats, and packet error stats
@@ -6313,7 +6317,7 @@ sub WriteHtmlFile {
 sub Perfdataout {
 
     #------  Pnp4nagios, Netwaysgrapherv2, ingraph, nagiosxi  ------#
-    if (( $ghOptions{'grapher'} eq  "pnp4nagios" ) || ( $ghOptions{'grapher'} eq  "ingraph" ) || ( $ghOptions{'grapher'} eq  "nagiosxi" )) {
+    if (( $ghOptions{'grapher'} eq  "pnp4nagios" ) || ( $ghOptions{'grapher'} eq  "ingraph" ) || ( $ghOptions{'grapher'} eq  "nagiosxi" ) || ( $ghOptions{'grapher'} eq  "grafana" ))  {
 
         # plugin related stats
         $gPerfdata .= "time=${RUNTIME_HR}s;;;; ".
@@ -7298,7 +7302,7 @@ sub print_usage () {
         macros are enabled in nagios.cfg/icinga.cfg
     -g, --grapher (optional)
         Specify the used graphing solution.
-        Can be pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite or nagiosxi.
+        Can be pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite or nagiosxi, grafana.
     --grapherurl (optional)
         Graphing system url. Default values are:
         Ex: /pnp4nagios
@@ -7496,7 +7500,7 @@ sub check_options () {
         'perfdatathreshold=s',                  # define which thresholds should be printed in the generated performance data.
         'perfdatadir=s',                        # where to write perfdata files directly for netways nagios grapher v1
         'perfdataservicedesc=s',                # servicedescription in Nagios/Icinga so that PNP uses the correct name for its files
-        'grapher|g=s',                          # graphing system. Can be pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite, nagiosxi
+        'grapher|g=s',                          # graphing system. Can be pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite, nagiosxi, grafana
         'grapherurl=s',                         # graphing system url. By default, this is adapted for pnp4nagios standard install: /pnp4nagios
         #-------- SNMP related ----------#
         'host=s',                               # SNMP host target
@@ -7902,7 +7906,7 @@ sub check_options () {
 
     #------- performance data -------#
     if (exists $commandline{grapher}) {
-        if ($commandline{grapher} =~ /^pnp4nagios$|^nagiosgrapher$|^netwaysgrapherv2$|^ingraph$|^graphite$|^nagiosxi$/i) {
+        if ($commandline{grapher} =~ /^pnp4nagios$|^nagiosgrapher$|^netwaysgrapherv2$|^ingraph$|^graphite$|^nagiosxi$|^grafana$/i) {
             $ghOptions{'grapher'} = "$commandline{grapher}";
             if ($ghOptions{'grapher'} eq "pnp4nagios") {
                 $ghOptions{'grapherurl'} = "/pnp4nagios";
@@ -7912,7 +7916,7 @@ sub check_options () {
                 $ghOptions{'grapherurl'} = "/nagiosxi/perfgraphs";
             }
         } else {
-            print "Specified grapher solution \"$commandline{grapher}\" is not valid. Valid graphers are: pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite, nagiosxi.\n";
+            print "Specified grapher solution \"$commandline{grapher}\" is not valid. Valid graphers are: pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite, nagiosxi, grafana.\n";
             exit $ERRORS{"UNKNOWN"};
         }
     }
