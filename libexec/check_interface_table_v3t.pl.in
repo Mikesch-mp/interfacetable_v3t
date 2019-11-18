@@ -43,6 +43,7 @@ use Encode qw(decode encode);
 use GeneralUtils;
 use Settings;
 use SnmpUtils;
+use URI::Escape;
 
 
 # ========================================================================
@@ -5919,9 +5920,15 @@ sub GenerateInterfaceTableData {
                                 'rel="' . $ghOptions{'grapherurl'} . '/index.php/popup?host=' . $ghOptions{'hostdisplay'} . '&srv=' . $servicename . '">' .
                                 '<img src="../img/chart.png" alt="Trends" /></a>';
                         } elsif ($ghOptions{'grapher'} eq  "grafana") {
-                            $CellContent .= '<a href="' .
-                                $ghOptions{'grapherurl'} . '&var-hostname=' . $ghOptions{'hostdisplay'} . '&var-interface=' . $servicename . '"> ' .
-                                '<img src="../img/chart.png" alt="Trends" /></a>';
+                            if ($ghOptions{'icingaweb2iframe'}) {
+                                $CellContent .= '<a href="/icingaweb2/iframe?showFullscreen&url=' .
+                                    uri_escape($ghOptions{'grapherurl'} . '&var-hostname=' . $ghOptions{'hostdisplay'} . '&var-interface=' . $servicename) . '"> ' .
+                                    '<img src="../img/chart.png" alt="Trends" /></a>';
+                            } else {
+                                $CellContent .= '<a href="' .
+                                    $ghOptions{'grapherurl'} . '&var-hostname=' . $ghOptions{'hostdisplay'} . '&var-interface=' . $servicename . '"> ' .
+                                    '<img src="../img/chart.png" alt="Trends" /></a>';
+                            }
                         } elsif ($ghOptions{'grapher'} eq  "nagiosgrapher") {
                             $CellContent .= '<a href="' .
                                 #$ghOptions{'grapherurl'} . '/graphs.cgi?host=' . $ghOptions{'hostdisplay'} . '&srv=' . $servicename .
@@ -7303,6 +7310,8 @@ sub print_usage () {
     -g, --grapher (optional)
         Specify the used graphing solution.
         Can be pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite or nagiosxi, grafana.
+    --icingaweb2iframe (optional)
+        Generate Icingaweb2 iframe links for graphs.
     --grapherurl (optional)
         Graphing system url. Default values are:
         Ex: /pnp4nagios
@@ -7502,6 +7511,7 @@ sub check_options () {
         'perfdataservicedesc=s',                # servicedescription in Nagios/Icinga so that PNP uses the correct name for its files
         'grapher|g=s',                          # graphing system. Can be pnp4nagios, nagiosgrapher, netwaysgrapherv2, ingraph, graphite, nagiosxi, grafana
         'grapherurl=s',                         # graphing system url. By default, this is adapted for pnp4nagios standard install: /pnp4nagios
+        'icingaweb2iframe!'                     # use icingaweb2 iframe to display graphs from grafana
         #-------- SNMP related ----------#
         'host=s',                               # SNMP host target
         'domain=s',                             # SNMP transport domain
@@ -7604,6 +7614,7 @@ sub check_options () {
         'perfdataservicedesc',      => undef,
         'grapher'                   => "@grapher@",
         'grapherurl'                => "@grapher_url@",
+        'icingaweb2iframe'          => 1,
         #------- other features ---------#
         'config'                    => '',
         'css'                       => "icinga",             # Used css stylesheet. Can be classic, icinga or nagiosxi.
@@ -7920,6 +7931,10 @@ sub check_options () {
             exit $ERRORS{"UNKNOWN"};
         }
     }
+    if (exists $commandline{'icingaweb2iframe'}) {
+        $ghOptions{'icingaweb2iframe'} = $commandline{'icingaweb2iframe'};
+    }
+
     if (exists $commandline{grapherurl}) {
         $ghOptions{'grapherurl'} = "$commandline{grapherurl}";
     }
